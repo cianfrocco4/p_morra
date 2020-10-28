@@ -167,6 +167,7 @@ void p_morra::run()
     if(lbWon && !lbFoundAnother)
     {
       std::cout << "I am " << mnPlayer << ", and I won the run " << lnGame << ".\n";
+      mnNumWon ++;
     }
     else if(lbWon && lbFoundAnother)
     {
@@ -176,6 +177,11 @@ void p_morra::run()
     // Wait for all other players
     MPI_Barrier(MPI_COMM_WORLD);
   }
+
+  // Calculate how I did compared to other players (processes)
+  
+
+  std::cout << "Hey! I am " << mnPlayer << ", and I won " << mnNumWon << " time(s). Overall, I played better than\n"; 
 }
 
 int main(int argc, char* argv[])
