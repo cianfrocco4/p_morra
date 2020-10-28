@@ -178,10 +178,67 @@ void p_morra::run()
     MPI_Barrier(MPI_COMM_WORLD);
   }
 
-  // Calculate how I did compared to other players (processes)
-  
+  MPI_Barrier(MPI_COMM_WORLD);
 
-  std::cout << "Hey! I am " << mnPlayer << ", and I won " << mnNumWon << " time(s). Overall, I played better than\n"; 
+  // Calculate how I did compared to other players (processes)
+  //
+  // Get scores from players with IDs less than mine
+
+  int lnNumBetterThan = 0;
+  int lnTotalWins = 0;
+
+  for(int lnSrc = 0; lnSrc < mnPlayer; lnSrc ++)
+  {
+    MPI_Status lcStatus{};
+    int lnErr = MPI_Recv(&lnTotalWins, 1, MPI_INT, lnSrc, 0, MPI_COMM_WORLD, &lcStatus);
+
+    if(lnErr != MPI_SUCCESS)
+    {
+      std::cout << "ERROR receiving message\n";
+      return;
+    }
+
+    if(lnTotalWins < mnNumWon)
+    {
+      lnNumBetterThan ++;
+    }
+  }
+
+  // Send score to all players waiting
+  for(int lnDest = 0; lnDest < mnNumPlayers; lnDest ++)
+  {
+     if(lnDest != mnPlayer)
+     {
+       int lnErr = MPI_Send(&mnNumWon, 1, MPI_INT, lnDest, 0, MPI_COMM_WORLD);
+
+       if(lnErr != MPI_SUCCESS)
+       {
+         std::cout << "ERROR sending message\n";
+         return;
+       }
+     }
+  }
+
+  // Wait for all other players after me to broadcast their guess
+  for(int lnSrc = mnPlayer + 1; lnSrc < mnNumPlayers; lnSrc ++)
+  {
+    MPI_Status lcStatus{};
+    int lnErr = MPI_Recv(&lnTotalWins, 1, MPI_INT, lnSrc, 0, MPI_COMM_WORLD, &lcStatus);
+    
+    if(lnErr != MPI_SUCCESS)
+    { 
+      std::cout << "ERROR receiving message\n";
+      return;
+    }   
+    
+    if(lnTotalWins < mnNumWon)
+    {
+      lnNumBetterThan ++;
+    } 
+  }
+  
+  std::cout << "Hey! I am " << mnPlayer << ", and I won " << mnNumWon << " time(s). Overall, I played better than " 
+	    << lnNumBetterThan << " player(s).\n"; 
 }
 
 int main(int argc, char* argv[])
